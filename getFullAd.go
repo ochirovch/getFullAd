@@ -8,14 +8,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	cloudevents "github.com/cloudevents/sdk-go/v2"
 )
 
 // HelloPubSub consumes a CloudEvent message and extracts the Pub/Sub message.
-func HelloPubSub(ctx context.Context, e cloudevents.Event) error {
+func HelloPubSub(ctx context.Context, messageData string) error {
 
-	messageData := string(e.Data())
 	if messageData == "" {
 		return fmt.Errorf("empty message data")
 	}
