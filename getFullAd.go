@@ -52,6 +52,9 @@ func HelloPubSub(ctx context.Context, messageData string) error {
 			return fmt.Errorf("failed to create POST request: %w", err)
 		}
 		postReq.Header.Set("Content-Type", "application/json")
+		postForms := postReq.URL.Query()
+		postForms.Set("ad_id", adID)
+		postReq.PostForm = postForms
 
 		postResp, err := client.Do(postReq)
 		if err != nil {
