@@ -33,14 +33,15 @@ func HelloPubSub(ctx context.Context, messageData string) error {
 			log.Printf("failed to get ad %s: %v", adID, err)
 			continue
 		}
-		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			log.Printf("failed to get ad %s, status: %d", adID, resp.StatusCode)
+			resp.Body.Close()
 			continue
 		}
 
 		adData, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
 		if err != nil {
 			log.Printf("failed to read ad data %s: %v", adID, err)
 			continue
@@ -49,21 +50,25 @@ func HelloPubSub(ctx context.Context, messageData string) error {
 		// Send ad data to target endpoint
 		postReq, err := http.NewRequest("POST", "https://raov.at/ads/ct", bytes.NewBuffer(adData))
 		if err != nil {
-			return fmt.Errorf("failed to create POST request: %w", err)
+			log.Printf("failed to create POST request for ad %s: %v", adID, err)
+			continue
 		}
 		postReq.Header.Set("Content-Type", "application/json")
 		postReq.Header.Set("ad_id", adID)
-
 		postResp, err := client.Do(postReq)
 		if err != nil {
-			return fmt.Errorf("failed to POST ad: %w", err)
+			log.Printf("failed to send ad %s: %v", adID, err)
+			continue
 		}
-		defer postResp.Body.Close()
 
 		if postResp.StatusCode != http.StatusOK && postResp.StatusCode != http.StatusCreated {
 			body, _ := io.ReadAll(postResp.Body)
-			return fmt.Errorf("failed to POST ad, status: %d, body: %s", postResp.StatusCode, string(body))
+			log.Printf("failed to send ad %s, status: %d, response: %s", adID, postResp.StatusCode, body)
+			postResp.Body.Close()
+			continue
 		}
+		postResp.Body.Close()
+		log.Printf("Successfully sent ad %s", adID)
 	}
 
 	return nil
